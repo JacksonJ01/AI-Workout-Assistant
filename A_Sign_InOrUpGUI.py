@@ -406,15 +406,15 @@ class SignInWindow(QWidget):
     def goToMenuWindow(self):
         uName = self.userNameInput.text()
         passW = self.passwordInput.text()
-        dataBaseUsernames = ["JacksonJ01"]
-        dataBasePassword = ["fitness"]
+        dataBaseUsernames = ["JacksonJ01", "fit"]
+        dataBasePassword = ["fitness", "ness"]
         dataBase = {"JacksonJ01: fitness"}
 
         if uName in dataBaseUsernames:
             if self.userNameLabel.text() == "Username Not Found":
                self.userNameLabel.setText = "Username"
 
-            if passW == dataBasePassword:
+            if passW in dataBasePassword:
                 self.switchToMenuWindow.emit()
 
         else:

@@ -116,6 +116,7 @@ class ChatBotWindow(QWidget):
         self.chatBotMessageHistory1.setAlignment(Qt.AlignCenter)
         self.chatBotMessageHistory1.setStyleSheet("""
         QLabel {
+            background-color: lightgray;
             text-align: center;
             font-size: 20px;
             font: bold italic "Times New Roman";

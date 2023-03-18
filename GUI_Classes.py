@@ -167,7 +167,7 @@ class Controller:
 
         self.workOut = WorkoutWindow()
         self.workOut.switchToMenuWindow.connect(self.showMainMenu)
-        self.workOut.showMaximized()
+        #self.workOut.showMaximized()
 
 
 def main():
@@ -179,8 +179,8 @@ def main():
     #controller.showSignUp()
     #controller.showAccountCreation()
     #controller.showMainMenu()
-    #controller.showWorkout()
-    controller.showChatBot()
+    controller.showWorkout()
+    #controller.showChatBot()
 
     #controller.showDatabaseWindow()
     #controller.showExerciseDatabaseWindow()

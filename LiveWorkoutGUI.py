@@ -6,11 +6,11 @@ CurrentRepCount = None
 CurrentExercise = None
 CurrentAngles = None
 ShowTargetAngles = True
-
+FinishWorkout = False
 
 class WorkoutWindow(QWidget):
     switchToMenuWindow = pyqtSignal()
-
+    
     def __init__(self):
         global CurrentExercise
         global CurrentRepCount
@@ -183,9 +183,9 @@ class WorkoutWindow(QWidget):
             #min-width: 400px;
             #max-width: 400px;
 
-        showingLines = QPushButton("Show Target Angles")
-        showingLines.clicked.connect(self.goToShowLines)
-        showingLines.setStyleSheet("""
+        self.showingLines = QPushButton("Show Target Angles")
+        self.showingLines.clicked.connect(self.goToShowLines)
+        self.showingLines.setStyleSheet("""
         QPushButton {
             font-size: 20px;
             font-family: "Times New Roman";
@@ -211,7 +211,7 @@ class WorkoutWindow(QWidget):
         self.addToLayout = [(self.title, 0, 0, 1, 3), 
                             (CurrentRepCount, 1, 0, 1, 1), (CurrentExercise, 1, 1, 1, 1), (CurrentAngles, 1, 2, 1, 1), 
                             (self.videoLabel, 2, 0, 1, 3),
-                            (self.backButton, 3, 0, 1, 1), (showingLines, 3, 1, 1, 1), (self.finishWorkout, 3, 2, 1, 1)]
+                            (self.backButton, 3, 0, 1, 1), (self.showingLines, 3, 1, 1, 1), (self.finishWorkout, 3, 2, 1, 1)]
         
         for x in self.addToLayout:
             layout.addWidget(x[0], x[1], x[2], x[3], x[4])
@@ -227,7 +227,8 @@ class WorkoutWindow(QWidget):
         self.switchToMenuWindow.emit()
 
     def goToFinishWorkout(self):
-        pass
+        global FinishWorkout
+        FinishWorkout = True
 
     def goToShowLines(self):
         global ShowTargetAngles
@@ -239,12 +240,23 @@ class WorkoutWindow(QWidget):
 
 repCount = 0
 video = None
+trainingData = []
+
 class Thread(QThread):
     changePixmap = pyqtSignal(QImage)
 
     def run(self):
-        
+
+        global CurrentExercise
+        global CurrentRepCount
+        global CurrentAngles
+        global ShowTargetAngles
+        global FinishWorkout
+        global trainingData
+
         def saveWorkout():
+            global FinishWorkout
+            global trainingData
             try:
                 if 2 <= self.repCount and exName.mirrored is False:
                     self.repCount //= 2
@@ -259,9 +271,23 @@ class Thread(QThread):
                         exerciseDict[exName.name] = [setCount + 1, (repCount + self.repCount) // 2]
                             
                 print(exerciseDict)
-
+            except:
+                pass
             finally:
-                input("ENTER To Quit")
+                global trainingData
+                # Get the path of the current file
+                current_directory = os.path.dirname(os.path.abspath(__file__))
+
+                # Create the full path of the file
+                file_path = os.path.join(current_directory, "mlTrain.txt")
+
+                # Open the file with the full path
+                with open(file_path, "w") as mlTrain:
+                    pass
+                    mlTrain.write(str(trainingData))
+                    mlTrain.close()
+
+                print("Done")
                 quit()
 
         def pauseWorkout():
@@ -357,21 +383,23 @@ class Thread(QThread):
         video.set(3, xLength)
         video.set(4, yHeight)
 
-        global CurrentExercise
-        global CurrentRepCount
-        global CurrentAngles
-        global ShowTargetAngles
-
         #input('Start')
         #while True: 
         while True:
-            #input("Next")
+            #try:
+            #    returned, img, detected, \
+            #    exName, repCompleted, \
+            #    allLocations = readImg(video, pose, drawLM, exName,
+            #                           showInterest=ShowTargetAngles, showDots=ShowTargetAngles,
+            #                           showLines=ShowTargetAngles, showText=ShowTargetAngles, known=known)
             try:
                 returned, img, detected, \
                 exName, repCompleted, \
-                allLocations = readImg(video, pose, drawLM, exName,
+                allLocations, machineLeaningInputData = readImg(video, pose, drawLM, exName,
                                        showInterest=ShowTargetAngles, showDots=ShowTargetAngles,
                                        showLines=ShowTargetAngles, showText=ShowTargetAngles, known=known)
+
+                trainingData.append(machineLeaningInputData)
 
                 #print(repCompleted)
                 # print(allLocations)
@@ -389,6 +417,7 @@ class Thread(QThread):
                 continue
             except RuntimeError as R:
                 print('Error:', R)
+
                 saveWorkout()
             except error:
                 saveWorkout()
@@ -513,13 +542,15 @@ class Thread(QThread):
                 pass
 
             if waitKey(1) & 0xFF == ord('q'):
-                pauseWorkout()
+                #pauseWorkout()
                 #saveWorkout()
+                break
 
-            
-            #if waitKey(1) & 0xFF == ord('p'):
-            #    pauseWorkout()
-
+            if FinishWorkout is True:
+                print([x for x in trainingData], "\n\n")
+                FinishWorkout = False
+                input("ENTER To Continue")
+                
             if returned:
                 # https://stackoverflow.com/a/55468544/6622587
                 rgbImage = cvtColor(img, COLOR_BGR2RGB)
@@ -528,3 +559,27 @@ class Thread(QThread):
                 convertToQtFormat = QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
                 p = convertToQtFormat.scaled(720, 480, Qt.KeepAspectRatio)
                 self.changePixmap.emit(p)
+
+
+        
+
+        # Get the path of the current file
+        current_directory = os.path.dirname(os.path.abspath(__file__))
+
+        # Create the full path of the file
+        file_path = os.path.join(current_directory, "mlTrain.txt")
+
+        # Open the file with the full path
+        with open(file_path, "w") as mlTrain:
+            mlTrain.write(trainingData)
+            mlTrain.close()
+        #        print([x for x in trainingData], "\n\n")
+        #input("ENTER To Exit")
+
+        #try:
+        #    mlTrain = open("mlTrain.txt", "w")
+
+        #    mlTrain.write(trainingData)
+        #    mlTrain.close()
+        #except:
+        #    print("Still Unable")
