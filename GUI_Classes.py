@@ -48,6 +48,7 @@ class DatabaseWindow(QWidget):
 class Controller:
 
     def __init__(self):
+        self.workOut = None
         pass
     
     def showLogin(self):
@@ -79,7 +80,7 @@ class Controller:
         self.signIn.showMaximized()
 
 
-    def showSignUp(self, genUserInfo):
+    def showSignUp(self):
         try:
            self.login.close()
         except:
@@ -89,7 +90,7 @@ class Controller:
         except:
             pass
 
-        self.signUp = SignUpWindow(genUserInfo)
+        self.signUp = SignUpWindow()
         self.signUp.switchToAccountCreationWindow.connect(self.showAccCrea)
         self.signUp.switchToLoginWindow.connect(self.showLogin)
         
@@ -108,7 +109,7 @@ class Controller:
         self.accountCreation.showMaximized()
 
 
-    def showMainMenu(self):
+    def showMainMenu(self, genUserInfo):
         
         # This doesn't work??
         #windowsToClose = [self.signIn, self.signUp, self.chatBot, self.workOut]
@@ -140,7 +141,7 @@ class Controller:
         except:
             pass
         
-        self.mainMenuWindow = MainMenuWindow()
+        self.mainMenuWindow = MainMenuWindow(genUserInfo)
         #self.mainMenuWindow.switchToDatabaseWindow.connect(self.showDatabaseWindow)
         self.mainMenuWindow.switchToChatBotWindow.connect(self.showChatBot)
         self.mainMenuWindow.switchToWorkoutWindow.connect(self.showWorkout)
@@ -149,26 +150,32 @@ class Controller:
 
 
     #################################################
-    def showChatBot(self):
+    def showChatBot(self, genUserInfo):
         try:
             self.mainMenuWindow.close()
         except AttributeError:
             pass
 
-        self.chatBot = ChatBotWindow()
+        self.chatBot = ChatBotWindow(genUserInfo)
         self.chatBot.switchToMenuWindow.connect(self.showMainMenu)
         self.chatBot.showMaximized()
 
-    def showWorkout(self):
+    def showWorkout(self, genUserInfo):
         try:
             self.mainMenuWindow.close()
         except AttributeError:
             pass
 
-        self.workOut = WorkoutWindow()
-        self.workOut.switchToMenuWindow.connect(self.showMainMenu)
-        #self.workOut.showMaximized()
-
+        #print(self.workOut)
+        if self.workOut is None:
+            self.workOut = WorkoutWindow(genUserInfo)
+            self.workOut.switchToMenuWindow.connect(self.showMainMenu)
+            self.workOut.showMaximized()
+        else:
+            self.workOut.switchToMenuWindow.disconnect()
+            self.workOut.switchToMenuWindow.connect(self.showMainMenu)
+        
+        self.workOut.showMaximized()
 
 def main():
     app = QApplication(argv)
@@ -177,10 +184,10 @@ def main():
     #controller.showLogin()
     #controller.showSignIn()
     #controller.showSignUp()
-    #controller.showAccountCreation()
-    #controller.showMainMenu()
-    controller.showWorkout()
-    #controller.showChatBot()
+    #controller.showAccountCreation([])
+    #controller.showMainMenu("JJ01")
+    controller.showWorkout("JJ01")
+    #controller.showChatBot("")
 
     #controller.showDatabaseWindow()
     #controller.showExerciseDatabaseWindow()

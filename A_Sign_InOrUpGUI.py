@@ -216,7 +216,7 @@ class LoginWindow(QWidget):
 
 
 class SignInWindow(QWidget):
-    switchToMenuWindow, switchToLoginWindow = pyqtSignal(), pyqtSignal()
+    switchToMenuWindow, switchToLoginWindow = pyqtSignal(str), pyqtSignal()
 
     def __init__(self):
         QWidget.__init__(self)
@@ -306,6 +306,7 @@ class SignInWindow(QWidget):
         """)
 
         self.passwordInput = QLineEdit()
+        self.passwordInput.setEchoMode(QLineEdit.Password)
         self.passwordInput.setStyleSheet("""
         QLineEdit {
             font-size: 30px;
@@ -406,20 +407,76 @@ class SignInWindow(QWidget):
     def goToMenuWindow(self):
         uName = self.userNameInput.text()
         passW = self.passwordInput.text()
-        dataBaseUsernames = ["JacksonJ01", "fit"]
-        dataBasePassword = ["fitness", "ness"]
-        dataBase = {"JacksonJ01: fitness"}
 
-        if uName in dataBaseUsernames:
-            if self.userNameLabel.text() == "Username Not Found":
-               self.userNameLabel.setText = "Username"
+        uPassW: list = selectFromTable(conn, dataBases[0][1], columns=["password"], fromWhere={"userName": uName})
 
-            if passW in dataBasePassword:
-                self.switchToMenuWindow.emit()
+        uPassW = uPassW[0][0]
+        print(passW, uPassW)
 
-        else:
+        if uPassW is False:
             self.userNameLabel.setText("UserName Not Found")
-  
+            self.userNameLabel.setStyleSheet("""
+            QLabel {
+                font-size: 30px;
+                font: bold italic "Times New Roman";
+                text-align: center;
+
+                min-height: 50px;
+                max-height: 75px;
+                min-width: 400px;
+                max-width: 400px;
+
+                border: 3px solid;
+                border-radius: 25%;
+
+                background-color: white;
+            }
+            """)
+            return
+        else:
+            self.userNameLabel.setText("UserName*")
+            self.userNameLabel.setStyleSheet("""
+            QLabel {
+                font-size: 30px;
+                font: bold italic "Times New Roman";
+                text-align: center;
+
+                min-height: 50px;
+                max-height: 75px;
+                min-width: 400px;
+                max-width: 400px;
+
+                border: 3px solid;
+                border-radius: 25%;
+
+                background-color: lightgray;
+            }
+            """)
+            if passW == uPassW:
+                dataBaseUsernames = []
+                self.passwordLabel.setText("Password*")
+                self.switchToMenuWindow.emit(uName)
+            else:
+                dataBaseUsernames = []
+                self.passwordLabel.setText("Incorrect Password")
+                self.passwordLabel.setStyleSheet("""
+                QLabel {
+                    font-size: 30px;
+                    font: bold italic "Times New Roman";
+                    text-align: center;
+
+                    min-height: 50px;
+                    max-height: 75px;
+                    min-width: 400px;
+                    max-width: 400px;
+
+                    border: 3px solid;
+                    border-radius: 25%;
+
+                    background-color: white;
+                }
+                """)
+                return
 
     def goToLoginWindow(self):
         self.switchToLoginWindow.emit()
@@ -427,17 +484,13 @@ class SignInWindow(QWidget):
 class SignUpWindow(QWidget):
     switchToAccountCreationWindow, switchToLoginWindow = pyqtSignal(list), pyqtSignal()
 
-    def __init__(self, genUserInfo):
+    def __init__(self):
         QWidget.__init__(self)
 
         self.setWindowTitle('Sign Up Window')
         self.setStyleSheet("background-color: gray")
 
-        self.genUserInfo = genUserInfo
-        self.filled = False
-        print(self.genUserInfo, len(self.genUserInfo))
-        if len(self.genUserInfo) > 2:
-            self.filled = True
+
 
         layout = QGridLayout()             
         
@@ -484,8 +537,6 @@ class SignUpWindow(QWidget):
         """)
 
         self.firstNameInput = QLineEdit()
-        if self.filled is True:
-            self.firstNameInput.setPlaceholderText(self.genUserInfo[0])
         self.firstNameInput.setStyleSheet("""
         QLineEdit {
             font-size: 30px;
@@ -527,8 +578,6 @@ class SignUpWindow(QWidget):
         """)
 
         self.lastNameInput = QLineEdit()
-        if self.filled is True:
-            self.lastNameInput.setPlaceholderText(self.genUserInfo[1])
         self.lastNameInput.setStyleSheet("""
         QLineEdit {
             font-size: 30px;
@@ -633,6 +682,7 @@ class SignUpWindow(QWidget):
         lName = self.lastNameInput.text()
         print(fName, lName)
         if fName != "" and lName != "":
+            print(fName, lName)
             self.switchToAccountCreationWindow.emit([fName, lName])
 
     def goToLoginWindow(self):
@@ -640,7 +690,7 @@ class SignUpWindow(QWidget):
 
 
 class AccountCreationWindow(QWidget):
-    switchToMenuWindow, switchToSignUpWindow = pyqtSignal(), pyqtSignal(list)
+    switchToMenuWindow, switchToSignUpWindow = pyqtSignal(str), pyqtSignal()
 
     def __init__(self, genUserInfo):
         QWidget.__init__(self)
@@ -650,7 +700,7 @@ class AccountCreationWindow(QWidget):
         layout = QGridLayout()             
 
         self.genUserInfo = genUserInfo
-        print(self.genUserInfo)
+        #print(self.genUserInfo)
 
         self.title = QLabel("Account Creation")
         self.title.setAlignment(Qt.AlignCenter)
@@ -733,6 +783,7 @@ class AccountCreationWindow(QWidget):
         """)
 
         self.passwordInput = QLineEdit()
+        self.passwordInput.setEchoMode(QLineEdit.Password)
         self.passwordInput.setStyleSheet("""
         QLineEdit {
             font-size: 30px;
@@ -773,6 +824,7 @@ class AccountCreationWindow(QWidget):
         """)
 
         self.reEnterPasswordInput = QLineEdit()
+        self.reEnterPasswordInput.setEchoMode(QLineEdit.Password)
         self.reEnterPasswordInput.setStyleSheet("""
         QLineEdit {
             font-size: 30px;
@@ -871,10 +923,6 @@ class AccountCreationWindow(QWidget):
         for x in self.addToLayout:
             layout.addWidget(x[0], x[1], x[2], x[3], x[4])
         self.setLayout(layout)
-
-    def checkDatabase(table:str, columns: list, fromWhere: dict ):
-        selectFromTable()
-        return
     
     def goToMenuWindow(self):
         # The credentials that the User enters will be checked in this method
@@ -882,19 +930,113 @@ class AccountCreationWindow(QWidget):
         uName = self.userNameInput.text()
         passW = self.passwordInput.text()
         rePassW = self.reEnterPasswordInput.text()
-        dataBaseUsernames = ["JacksonJ01"]
 
-        if uName in dataBaseUsernames:
-            self.userNameLabel.setText("Username Taken")
+        #print(passW, rePassW, passW != rePassW)
+        if passW != rePassW:
+            self.reEnterpasswordLabel.setText("Passwords Do Not Match")
+            self.reEnterpasswordLabel.setStyleSheet("""
+            QLabel {
+            font-size: 30px;
+            font: bold italic "Times New Roman";
+            text-align: center;
+
+            min-height: 50px;
+            max-height: 75px;
+            min-width: 400px;
+            max-width: 400px;
+
+            border: 3px solid;
+            border-radius: 25%;
+
+            background-color: white;
+        }
+        """)
+            return
         else:
-            if uName != "":
-                if self.userNameLabel.text() == "Username Taken":
-                   self.userNameLabel.setText("Username")
+            self.reEnterpasswordLabel.setText("Re-Enter Password*")
+            self.reEnterpasswordLabel.setStyleSheet("""
+            QLabel {
+            font-size: 30px;
+            font: bold italic "Times New Roman";
+            text-align: center;
 
-                if passW == rePassW:
-                    self.switchToMenuWindow.emit()
-                else:
-                    self.reEnterpasswordLabel.setText("Passwords Do Not Match")
+            min-height: 50px;
+            max-height: 75px;
+            min-width: 400px;
+            max-width: 400px;
+
+            border: 3px solid;
+            border-radius: 25%;
+
+            background-color: lightgray;
+        }
+        """)
+
+        global conn
+        #print(conn)
+
+        dataBaseUsernames: list = selectFromTable(conn, "PersonTable", columns=["userName"])
+        #print(uName, dataBaseUsernames)
+        taken = False
+        for user in dataBaseUsernames:
+            print(uName, user[0], taken)
+            if uName == user[0]:
+                taken = True
+                print(uName, user[0], taken)
+                break
+
+        if taken is False:
+            self.userNameLabel.setText("Username*")
+            self.userNameLabel.setStyleSheet("""
+            QLabel {
+                font-size: 30px;
+                font: bold italic "Times New Roman";
+                text-align: center;
+
+                min-height: 50px;
+                max-height: 75px;
+                min-width: 400px;
+                max-width: 400px;
+
+                border: 3px solid;
+                border-radius: 25%;
+
+                background-color: lightgray;
+            }
+            """)
+
+            userData = {
+                "userName": uName,
+                "password": passW,
+                "firstName": self.genUserInfo[0],
+                "lastName": self.genUserInfo[1],
+            }
+            
+            data = addIntoTable(conn, "PersonTable", userData)
+            #print(data)
+            self.switchToMenuWindow.emit(uName)
+                
+        else:
+            dataBaseUsernames = []
+            self.userNameLabel.setText("Username Taken")
+            self.userNameLabel.setStyleSheet("""
+            QLabel {
+                font-size: 30px;
+                font: bold italic "Times New Roman";
+                text-align: center;
+
+                min-height: 50px;
+                max-height: 75px;
+                min-width: 400px;
+                max-width: 400px;
+
+                border: 3px solid;
+                border-radius: 25%;
+
+                background-color: white;
+            }
+            """)
+            return
 
     def goToSignUpWindow(self):
-        self.switchToSignUpWindow.emit([self.genUserInfo[0], self.genUserInfo[1]])
+        self.switchToSignUpWindow.emit()

@@ -4,15 +4,15 @@
 personTable = """
 CREATE TABLE IF NOT EXISTS 
   PersonTable (
-  userID       INTEGER NOT NULL,
   userName     TEXT    NOT NULL,
   password     TEXT    NOT NULL,
   firstName    TEXT    NOT NULL,
   lastName     TEXT    NOT NULL,
     
-  PRIMARY KEY (userID, userName)
+  PRIMARY KEY (userName)
 );
 """
+
 # This variable holds the Exercise Table
 # The user has the ability to Add/Update/Delete Exercises 
 # Each exercise has a Base Intensity that can be Edited
@@ -20,11 +20,10 @@ CREATE TABLE IF NOT EXISTS
 exerciseTable = """
 CREATE TABLE IF NOT EXISTS
   ExerciseTable (
-  exID            INTEGER,
-  exName          TEXT,
-  muscleGroups    TEXT    NOT NULL,
+  exName       TEXT,
+  muscleGroups TEXT    NOT NULL,
   
- PRIMARY KEY (exID, exName)
+ PRIMARY KEY (exName)
 );
 """
 
@@ -34,12 +33,15 @@ CREATE TABLE IF NOT EXISTS
 workoutData = """
 CREATE TABLE IF NOT EXISTS
   WorkoutDataTable (
-  workoutEntryNum  INTEGER PRIMARY KEY AUTOINCREMENT,
-  userID           INTEGER,
-  dateID           DATE,
-  exID             INTEGER NOT NULL,
-  setCount         INTEGER NOT NULL,
-  repCount         INTEGER NOT NULL,
+  workoutEntryNum INTEGER,
+  userName        TEXT    NOT NULL,
+  dateID          TEXT,
+  exName          TEXT,
+  setCount        INTEGER NOT NULL,
+  repCount        INTEGER NOT NULL,
+
+ PRIMARY KEY (workoutEntryNum)
+
 );
 """
 

@@ -1,20 +1,28 @@
 from speechFunct import analyzeResponse
 from basicImportInfo import *
 
-
 CurrentRepCount = None  
 CurrentExercise = None
 CurrentAngles = None
 ShowTargetAngles = True
+UserInfo = None
+WorkoutEnded = None
+trackedExercises = None
 FinishWorkout = False
 
+                                          
 class WorkoutWindow(QWidget):
-    switchToMenuWindow = pyqtSignal()
+    switchToMenuWindow = pyqtSignal(str)
     
-    def __init__(self):
+    def __init__(self, genUserInfo):
         global CurrentExercise
         global CurrentRepCount
         global CurrentAngles
+        global UserInfo
+        global WorkoutEnded
+
+        UserInfo = genUserInfo
+        print(UserInfo)
 
         QWidget.__init__(self)
         self.setWindowTitle('Workout Window')
@@ -105,12 +113,35 @@ class WorkoutWindow(QWidget):
             
         
         self.videoLabel = QLabel(self)
-        #self.videoLabel.move(280, 120)
-        #self.videoLabel.resize(640, 480)
-        th = Thread()
-        th.changePixmap.connect(self.captureImage)
-        th.start()
-        #self.show()
+        
+        #try:
+        #    if self.th.isRunning() is True:
+        #        print("Here1", self.th.isRunning())
+
+        #except AttributeError as e:
+        #    print(e)
+        #    self.th = Thread(self)
+        #    self.th.start()
+        #    print("Here2", self.th.isRunning())
+        #    pass
+
+        
+
+        self.th = Thread(self)
+        try:
+            print("Here1")
+            print(QThread.currentThread(), self.th, self.th.isRunning())
+        
+            self.th.changePixmap.connect(self.captureImage)
+            self.th.start()
+        except:
+            print("Here2")
+            self.th = Thread(self)
+            self.th.changePixmap.connect(self.captureImage)
+            self.th.start()
+
+
+        WorkoutEnded = False
         self.videoLabel.setAlignment(Qt.AlignCenter)
         self.videoLabel.setStyleSheet("""
         QLabel {
@@ -223,12 +254,27 @@ class WorkoutWindow(QWidget):
         self.videoLabel.setPixmap(QPixmap.fromImage(image))        
 
     def goToMenuWindow(self):
-        terminateWindows(video)
-        self.switchToMenuWindow.emit()
+
+        self.switchToMenuWindow.emit(UserInfo)
 
     def goToFinishWorkout(self):
-        global FinishWorkout
-        FinishWorkout = True
+        print(trackedExercises)
+        for exercise in trackedExercises:
+            exerciseDataEntry = {
+                "userName": UserInfo,
+                "dateID": QDate().currentDate().toString("yyyy:MM:dd"),
+                "exName": exercise,
+                "setCount": trackedExercises[exercise][0],
+                "repCount": trackedExercises[exercise][1]
+            }
+            print(exerciseDataEntry)
+            try:
+                data = addIntoTable(conn, dataBases[2][1], exerciseDataEntry)
+                print(data)
+            except:
+                print("275")
+                pass
+        print("Saving")
 
     def goToShowLines(self):
         global ShowTargetAngles
@@ -238,12 +284,10 @@ class WorkoutWindow(QWidget):
             ShowTargetAngles = True
 
 
-repCount = 0
-video = None
-trainingData = []
-
 class Thread(QThread):
     changePixmap = pyqtSignal(QImage)
+
+
 
     def run(self):
 
@@ -252,59 +296,74 @@ class Thread(QThread):
         global CurrentAngles
         global ShowTargetAngles
         global FinishWorkout
-        global trainingData
-
-        def saveWorkout():
-            global FinishWorkout
-            global trainingData
-            try:
-                if 2 <= self.repCount and exName.mirrored is False:
-                    self.repCount //= 2
-
-                if self.repCount > minimumRepCount:
-                    # key = [setCount, repCount]
-                    if exName.name not in exerciseDict:
-                        exerciseDict[exName.name] = [1, self.repCount]
-
-                    else:
-                        setCount, repCount = exerciseDict[exName.name]
-                        exerciseDict[exName.name] = [setCount + 1, (repCount + self.repCount) // 2]
-                            
-                print(exerciseDict)
-            except:
-                pass
-            finally:
-                global trainingData
-                # Get the path of the current file
-                current_directory = os.path.dirname(os.path.abspath(__file__))
-
-                # Create the full path of the file
-                file_path = os.path.join(current_directory, "mlTrain.txt")
-
-                # Open the file with the full path
-                with open(file_path, "w") as mlTrain:
-                    pass
-                    mlTrain.write(str(trainingData))
-                    mlTrain.close()
-
-                print("Done")
-                quit()
-
-        def pauseWorkout():
-            ent = input("ENTER 2 Resume")
-            if ent == "q":
-                quit()
-
-
+        #global trainingData
         global defaultCam
-        global video
+        global trackedExercises
+
+        video = None
+
+
+        repCount = 0
+        trainingData = []
+        exName = None
+        Known = False
+
         self.defaultCam = defaultCam
-        global repCount
         self.repCount = repCount
 
         mPose = mp.solutions.pose
         pose = mPose.Pose()
         drawLM = mp.solutions.drawing_utils
+
+        detected = False
+        Known = False
+        
+        #def saveWorkout():
+        #    global UserInfo
+        #    #global trainingData
+        
+        #    try:
+        #        if 2 <= self.repCount and exName.mirrored is False:
+        #            self.repCount //= 2
+
+        #        if self.repCount > minimumRepCount:
+        #            # key = [setCount, repCount]
+        #            if exName.name not in exerciseDict:
+        #                exerciseDict[exName.name] = [1, self.repCount]
+
+        #            else:
+        #                setCount, repCount = exerciseDict[exName.name]
+        #                exerciseDict[exName.name] = [setCount + 1, (repCount + self.repCount) // 2]
+                            
+
+        #            # Format: exerciseDict[exercise] => exerciseDict[exercise.name] => [setCount, repCount]
+        #            # "userName": UserInfo
+        #            # "dateID": 
+        #            # "exName": exercise.name
+        #            # "setCount": exerciseDict[exercise.name][0]
+        #            # "repCount": exerciseDict[exercise.name][1]
+
+        #        Conn = workoutDatabase()
+        #        for exercise in exerciseDict:
+        #            exerciseDataEntry = {
+        #                "userName": UserInfo,
+        #                "dateID": QDate().currentDate().toString("yyyy:MM:dd"),
+        #                "exName": exercise,
+        #                "setCount": exerciseDict[exercise][0],
+        #                "repCount": exerciseDict[exercise][1]
+        #            }
+        #            print(exerciseDataEntry)
+        #            try:
+        #                data = addIntoTable(Conn, dataBases[2][1], exerciseDataEntry)
+        #                print(data)
+        #            except:
+        #                print("331")
+        #                pass
+        #    except:
+        #        print("337")
+        #        pass
+
+        
 
         pTime = 0
 
@@ -313,28 +372,9 @@ class Thread(QThread):
         #            "leftShoulder|leftWrist": [], "rightShoulder|rightWrist": [],
         #            "leftHip|LeftAnkle": [], "rightHip|rightAnkle": []}
 
-        exerciseDict = {}
-        verificationTime = 1  # The program will take 2x seconds to verify the workout
-        startingPreparations = time()
-        beginVerification = None
+        
 
-        detected = False
-        assumption = None
-        assumptionMade = False
-        known = False
 
-        exercisesCompletedList = []
-        exerciseCount = 0
-        nOrLatch = False
-        self.repCount = -1
-
-        endWorkout = False
-        exName = None
-
-        downTime = 4
-        currentDownTime = time()
-        # firstTimeCheckBool = True
-        minimumRepCount = 1
     
         xLength = 720
         yHeight = 480
@@ -357,26 +397,8 @@ class Thread(QThread):
             print("Okay")
             video = VC(1)
         elif self.defaultCam == 1:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test1.gif")  # Single Arm Bicep Curl
-        elif self.defaultCam == 2:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test2.mp4")  # Bicep Curl 2
-        elif self.defaultCam == 3:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test3.gif")  # Bicep Curls  need new
-        elif self.defaultCam == 4:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test4.gif")  # Squat
-        elif self.defaultCam == 5:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test5.gif")  # Back Squat 2
-        elif self.defaultCam == 6:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test6.gif")  # Squat 3  need new
-        elif self.defaultCam == 7:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test7.gif")  # Front Squats
-        elif self.defaultCam == 8:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test8.gif")  # Front Squats
-        elif self.defaultCam == 9:
-            video = VC("C:\\Users\\Big Boi J\\Downloads\\test9.gif")
-        elif self.defaultCam == 11:
             video = VC("C:\\Users\\Big Boi J\\source\\repos\\WorkoutAssistant\\WorkoutAssistant\\workoutTrainingVideos\\bicepCurls\\bicep0.mp4")
-        elif self.defaultCam ==12:
+        elif self.defaultCam == 2:
             video = VC("C:\\Users\\Big Boi J\\source\\repos\\WorkoutAssistant\\WorkoutAssistant\\workoutTrainingVideos\\allExercisesVideo\\allEx.mp4")
             
 
@@ -385,171 +407,112 @@ class Thread(QThread):
 
         #input('Start')
         #while True: 
+
+        vT0 = .1
+        vT1 = .2
+        assumpt0 = None
+
+        nOr = False
+        vTStart = None
+        dTStart = None
+        exResetTime = 4
+
+        repCount = 0
+        minRepReq = 2
+        trackedExercises = {}
+
+
         while True:
-            #try:
-            #    returned, img, detected, \
-            #    exName, repCompleted, \
-            #    allLocations = readImg(video, pose, drawLM, exName,
-            #                           showInterest=ShowTargetAngles, showDots=ShowTargetAngles,
-            #                           showLines=ShowTargetAngles, showText=ShowTargetAngles, known=known)
             try:
                 returned, img, detected, \
-                exName, repCompleted, \
-                allLocations, machineLeaningInputData = readImg(video, pose, drawLM, exName,
+                exName, repCompleted = readImg(video, pose, drawLM, exName,
                                        showInterest=ShowTargetAngles, showDots=ShowTargetAngles,
-                                       showLines=ShowTargetAngles, showText=ShowTargetAngles, known=known)
-
-                trainingData.append(machineLeaningInputData)
-
-                #print(repCompleted)
-                # print(allLocations)
-                #convertedLoc = []
-                # Loop to adjust the Y cords of the location
-                #for cor in allLocations:
-                #    new = cor[1], yHeight - cor[2], cor[3]
-                    #convertedLoc.append(new)
-
-                # server.sendto(str.encode(str(convertedLoc)), serverAddressPort)
-                # print(convertedLoc)
+                                       showLines=ShowTargetAngles, showText=ShowTargetAngles, known=Known)
 
             except TypeError as T:
                 print('Error:', T)
                 continue
             except RuntimeError as R:
                 print('Error:', R)
+                pass 
+            except error as e:
+                print('Error:', e)
+                pass
 
-                saveWorkout()
-            except error:
-                saveWorkout()
+            if Known is True:
+                if repCompleted is True:
+                    if nOr is False:
+                        repCount += 1
+                        nOr = True
+                        dTStart = None
+                    
+                        CurrentRepCount.setText(f"Rep Count: {repCount}")
+                        CurrentAngles.setText(f"Within Range: {repCompleted}")
 
-
-            #pTime = fps(img, pTime)
-            elapsedTime = time()
-            if known is True:
-                #input("Waiting")
-                # if firstTimeCheckBool is True:
-                #     firstTimeCheckBool = False
-                    # currentDownTime = time()
-
-                try:
-                    CurrentExercise.setText(f"Exercise: {exName.name}") 
-                    CurrentRepCount.setText(f"Rep Count: {self.repCount}")
-                    CurrentAngles.setText(f"Within Range: {repCompleted}")
-                except AttributeError as a:
-                    print("Error:", a)
-                    pass
-
-                print("\nWithin Repetition Target Range:", repCompleted, nOrLatch)
-                print('\nDownTime', int(time()) - currentDownTime)
-                if repCompleted is True and nOrLatch is False:
-                    self.repCount += 1
-                    nOrLatch = True
-
-                elif repCompleted is not True and nOrLatch is True:
-                    if nOrLatch is True:
-                        currentDownTime = int(time())
-                        nOrLatch = False
-
-                if repCompleted is False:
-                    # Prevents the DownTime from entering; norLatch is True when the rep is completed, but downTime 
-                    if int(time()) - currentDownTime >= downTime and nOrLatch is not True:
-                        try:
-                            CurrentExercise.setText(f"Exercise: ____") 
-                            CurrentRepCount.setText(f"Rep Count: ____")
-                            CurrentAngles.setText(f"Within Range: ____")
-                        except AttributeError as a:
-                            print("Error:", a)
-                            pass
-
-
-                        known = False
-                        assumptionMade = False
-                        startingPreparations, currentDownTime = time(), time()
-
-                        if 2 <= self.repCount and exName.mirrored is False:
-                            self.repCount //= 2
-
-                        if self.repCount > minimumRepCount:
-                            # key = [setCount, repCount]
-                            if exName.name not in exerciseDict:
-                                exerciseDict[exName.name] = [1, self.repCount]
-
+                else:
+                    if dTStart is None:
+                        nOr = False
+                        dTStart = time()
+                    elif int(time() - dTStart) >= exResetTime:
+                        if repCount > minRepReq:
+                            if exName.name in trackedExercises:
+                               totalSet, avgRep = trackedExercises[exName.name]
+                               trackedExercises[exName.name] = [(totalSet + 1), (avgRep + repCount) // 2]
                             else:
-                                setCount, repCount = exerciseDict[exName.name]
-                                exerciseDict[exName.name] = [setCount + 1, (repCount + self.repCount) // 2]
-                            self.repCount = -1
+                               trackedExercises[exName.name] = [1, repCount]
 
-                        # reset the values
-                print(exerciseDict)
-                #print("Repetition Tracker:", self.repCount)
+                        print(trackedExercises)
+                        repCount = 0
+                        Known = False
+                        dTStart = None
+
+                        CurrentExercise.setText(f"Exercise: ____") 
+                        CurrentRepCount.setText(f"Rep Count: ____")
+                        CurrentAngles.setText(f"Within Range: ____")
+                print(repCount)
+                
 
             else:
-                # This allows the program to get an initial idea on what the exercise might be
-                # Once it makes this assumption, the computer will wait x amount of time before checking again
-                print(elapsedTime, '-', startingPreparations, '>', verificationTime)
-                if (elapsedTime - startingPreparations) > verificationTime and assumptionMade is False:
-                    try:
-                        if assumptionMade is False:
-                            assumption = exName
-                            print("First assumption:", [x.name for x in assumption])
-                            assumptionMade = True
-                            beginVerification = time()
-                    except IndexError as I:
-                        assumptionMade = False
-                        print('Error:', I)
-                    except TypeError as T:
-                        print('Error:', T)
-                        assumptionMade = False
+                if detected is True:
+                    if assumpt0 is None \
+                        and vTStart is None:
+                        vTStart = time()
 
-                    # Once x amount of time passes, the computer will make it's second check
-                    # If current assumption matches the prior assumption, then the exercise will be seen as known
+                    elif assumpt0 is None \
+                        and int(time() - vTStart) >= vT0:
+                        if len(exName) != 1:
+                            vTStart = None
+                        elif len(exName) == 1:
+                            assumpt0 = exName[0]
+                            vTStart = time()
 
-                if assumptionMade is True:
-                    print(elapsedTime, '-', beginVerification, '>', verificationTime)
-                    if (elapsedTime - beginVerification) > verificationTime:
-                        print("\nTime Elapsed Between Detection:", float(elapsedTime - beginVerification))
-                        print("assumption1:", [x.name for x in assumption], " | assumption2:", [x.name for x in exName])
-                        try:
-                            if detected is False:
-                                assumptionMade = False
-                            else:
-                                try:
-                                    print(assumption, exName)
-                                    if exName == assumption or exName in assumption:
-                                        exName = exName[0]
-                                        print("\nExercise Confirmed:", exName.name, "\n")
-                                        known = True
-                                    # If the assumed workout doesn't match, then the process will start over
-                                    else:
-                                        assumption = exName
-                                        startingPreparations = time()
-                                        assumptionMade = False
-                                except TypeError:
-                                    assumption = exName
-                                    startingPreparations = time()
-                                    assumptionMade = False
+                    elif assumpt0 is not None \
+                        and int(time() - vTStart) >= vT1:
+                        if len(exName) != 1:
+                            assumpt0 = None
+                            vTStart = None
 
-                        except IndexError or TypeError:
-                            assumption = exName 
-                            startingPreparations = time()
-                            assumptionMade = False
+                        elif len(exName) == 1:
+                            if assumpt0.name == exName[0].name:
+                                exName = exName[0]
+                                CurrentExercise.setText(f"Exercise: {exName.name}") # Move down
+                                
+                                Known = True
+                                dTStart = None
 
-            try:
-                #img = flip(img, 1)
-                #imshow("Picture", img)
-                pass
-            except error:
-                pass
+                            assumpt0, vTStart = None, None
+                            #elif assumpt0.name != exName[0].name:
+                                #assumpt0, vTStart = None, None
 
-            if waitKey(1) & 0xFF == ord('q'):
-                #pauseWorkout()
-                #saveWorkout()
-                break
+                else:
+                    print("Not Detected")
+                    pass
 
             if FinishWorkout is True:
-                print([x for x in trainingData], "\n\n")
                 FinishWorkout = False
-                input("ENTER To Continue")
+                print("Saving Workout1")
+                #saveWorkout()
+                #break
                 
             if returned:
                 # https://stackoverflow.com/a/55468544/6622587
@@ -561,25 +524,4 @@ class Thread(QThread):
                 self.changePixmap.emit(p)
 
 
-        
-
-        # Get the path of the current file
-        current_directory = os.path.dirname(os.path.abspath(__file__))
-
-        # Create the full path of the file
-        file_path = os.path.join(current_directory, "mlTrain.txt")
-
-        # Open the file with the full path
-        with open(file_path, "w") as mlTrain:
-            mlTrain.write(trainingData)
-            mlTrain.close()
-        #        print([x for x in trainingData], "\n\n")
-        #input("ENTER To Exit")
-
-        #try:
-        #    mlTrain = open("mlTrain.txt", "w")
-
-        #    mlTrain.write(trainingData)
-        #    mlTrain.close()
-        #except:
-        #    print("Still Unable")
+        return("Error")

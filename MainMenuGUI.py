@@ -1,14 +1,21 @@
 from basicImportInfo import *
 
 
+UserInfo = None
+#Conn = WorkoutData()
+
 class MainMenuWindow(QWidget):
     switchToDatabaseWindow, switchToChatBotWindow, switchToWorkoutWindow, switchToLoginWindow = \
-    pyqtSignal(), pyqtSignal(), pyqtSignal(), pyqtSignal() 
+    pyqtSignal(str), pyqtSignal(str), pyqtSignal(str), pyqtSignal() 
 
-    def __init__(self):
+    def __init__(self, genUserInfo):
         QWidget.__init__(self)
         self.setWindowTitle('Sign Up Window')
         self.setStyleSheet("background-color: gray")
+
+        global UserInfo
+        UserInfo = genUserInfo
+
 
         layout = QGridLayout()
 
@@ -176,13 +183,16 @@ class MainMenuWindow(QWidget):
         self.setLayout(layout)
 
     def goToDatabaseWindow(self):
-        self.switchToDatabaseWindow.emit()
+        global UserInfo
+        self.switchToDatabaseWindow.emit(UserInfo)
 
     def goToChatBotWindow(self):
-        self.switchToChatBotWindow.emit()
+        global UserInfo
+        self.switchToChatBotWindow.emit(UserInfo)
 
     def goToWorkoutWindow(self):
-        self.switchToWorkoutWindow.emit()
+        global UserInfo
+        self.switchToWorkoutWindow.emit(UserInfo)
 
     def goToExit(self):
         exit("Thank You! \nDo Come Again")

@@ -10,17 +10,19 @@ from math import atan2, pi
 
 def readImg(video, pose, drawLM, exName, showInterest=False, showDots=False,
             showLines=False, showText=False, known=False):
-    returned, img = video.read()
-    
-    #try:
-    #    img = resize(img, (900, 500))
-    #except error:
-    #        pass
+    returned, img = None, None
+    try:
+        returned, img = video.read()
+        img = resize(img, (720, 480))
+    except AttributeError:
+        pass
+    except error:
+            pass
     #if not returned:
     #    pass
 
     img, results = findLandmarks(img, pose)
-    img, locationsOfInterest, allLocations = getLandmarkLocations(img, drawLM, results, showInterest, showDots,
+    img, locationsOfInterest, _ = getLandmarkLocations(img, drawLM, results, showInterest, showDots,
                                                                   showLines)
     leftAngles, rightAngles = [], []
     detected = None
@@ -28,16 +30,16 @@ def readImg(video, pose, drawLM, exName, showInterest=False, showDots=False,
     try:
         img, leftAngles, rightAngles = calculateAngle(img, locationsOfInterest, showText)
         
-        #if known is True:
-        #    repC = detectRepetitions(leftAngles, rightAngles, exName)
-        #else:
-        #    detected, exName = detectExercise(leftAngles, rightAngles, locationsOfInterest)
-        detected, exName = detectExercise(leftAngles, rightAngles, locationsOfInterest)
+        if known is True:
+            repC = detectRepetitions(leftAngles, rightAngles, exName)
+        else:
+            detected, exName = detectExercise(leftAngles, rightAngles, locationsOfInterest)
+        #detected, exName = detectExercise(leftAngles, rightAngles, locationsOfInterest)
     except TypeError:
         pass
 
     #return returned, img, detected, exName, repC, allLocations
-    return returned, img, detected, exName, repC, allLocations, [[leftAngles, rightAngles], [locationsOfInterest], detected]
+    return returned, img, detected, exName, repC  #, allLocations
 
 
 # _____________________________________________________________________________
@@ -467,7 +469,7 @@ singleArmShoulderPress = Exercise("Single Arm Shoulder Press",
 
 exercises = [abductorLegRaises,
              #barbellSquats,
-             bicepCurls,                                    
+             bicepCurls,      
              singleArmBicepCurls,
              deltoidArmRaises,
              singleArmDeltoidRaises,

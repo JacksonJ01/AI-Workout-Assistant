@@ -1,5 +1,5 @@
 import os
-from workoutDatabase import *
+from dbTablesFunct import *
 
 from cameraFunct import *
 
@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QApplication, QDateEdit, QGridLayout, QLabel, QLineE
 
 #input(f'{winLength, winHeight}')
 
-defaultCam = 11
+defaultCam = 1
 
 #from PySide import QtGui
 
